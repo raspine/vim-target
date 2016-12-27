@@ -33,3 +33,6 @@ nnoremap <leader>g :exec "Spawn urxvt -e gdb" . FindCMakeTarget()<cr>
 
 ```
 
+## License
+
+Distributed under the same terms as Vim itself.  See the vim license.
