@@ -19,7 +19,7 @@ endfunction
 " A cmake parser with the single purpose of finding the target name
 " for the % file. The function only returns a single target name and
 " do not handle target names built with multiple concatenated cmake variables.
-function! FindCMakeTargetName()
+function! FindCMakeTarget()
     let l:found_var = 0
     let l:var_name = ""
     let l:app_name = ""
@@ -108,7 +108,7 @@ function! FindCMakeTargetName()
         " So we make a substitution of what we got, e.g. to my_app_test.
         " echo main_app_name . " " . var_name . " " . app_name
         let app_name = substitute(app_name, "${\\_s*" . var_name . "\\_s*}", main_app_name, "")
-        return build_dir . "/" . app_name
+        return " " . build_dir . "/" . app_name
     else
         return ""
     endif

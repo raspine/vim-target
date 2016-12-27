@@ -14,16 +14,22 @@ vim-target does not fill a particular purpose on its own, however I use it in
 my .vimrc to launch stuff.
 
 ## Usage
-vim-target currently provides a single function `FindCMakeTargetName()` that
+vim-target currently provides a single function `FindCMakeTarget()` that
 returns the executable target for the active buffer.
+
+Test with:
+```
+:echo FindCMakeTarget()
+```
+
 
 Examples:
 ```
 " run the target from Vim
-nnoremap <leader>r :!FindCMakeTargetName()<cr>
+nnoremap <leader>r :exec "!" . FindCMakeTarget()<cr>
 
 " spawn a gdb session in a separate terminal using Tim Pope's vim-dispatch plugin
-nnoremap <leader>g :exec "Spawn urxvt -e gdb" . FindCMakeTargetName()<cr>
+nnoremap <leader>g :exec "Spawn urxvt -e gdb" . FindCMakeTarget()<cr>
 
 ```
 
