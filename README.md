@@ -1,4 +1,4 @@
-# vim-target
+vim-target
 =============
 ### Returns the executable ###
 
