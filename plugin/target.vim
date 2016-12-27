@@ -108,7 +108,7 @@ function! FindCMakeTarget()
         " So we make a substitution of what we got, e.g. to my_app_test.
         " echo main_app_name . " " . var_name . " " . app_name
         let app_name = substitute(app_name, "${\\_s*" . var_name . "\\_s*}", main_app_name, "")
-        return " " . build_dir . "/" . app_name
+        return build_dir . "/" . app_name
     else
         return ""
     endif
