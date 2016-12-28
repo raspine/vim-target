@@ -10,8 +10,8 @@ As the current buffer may be linked by several executable targets, it's not
 "water proof" and will work best if your the current buffer/file has
 a CMakeList.txt defined in the same directory.
 
-vim-target does not fill a particular purpose on its own, however I use it in
-my .vimrc to launch stuff.
+I mainly use it in my .vimrc to launch stuff together with [vim-breakgutter](http://github.com/raspine/vim-breakgutter) and
+[vim-testdog](http://github.com/raspine/vim-testdog).
 
 ## Usage
 vim-target currently provides a single function `FindExeTarget()` that
