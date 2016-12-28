@@ -14,8 +14,8 @@ let g:target_cmake_env = 1
 function! FindExeTarget()
     " TODO: support more build environments
     if g:target_cmake_env
-        let l:target = FindCMakeTarget()
-        if target != "" && !executable(target)
+        let l:target = <SID>FindCMakeTarget()
+        if l:target != "" && !executable(l:target)
             echoerr "Failed to parse cmake environment for target"
             return ""
         endif
@@ -23,7 +23,7 @@ function! FindExeTarget()
         echoerr "Target's build environment not supported"
     endif
 
-    return target
+    return l:target
 
 endfunction
 
