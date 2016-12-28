@@ -7,6 +7,30 @@ if exists("g:loaded_target") || &cp || v:version < 700
 endif
 let g:loaded_target = 1
 
+" global vars
+let g:target_check_executable = 1
+let g:target_cmake_env = 1
+
+" public interface
+function! FindExeTarget()
+    " TODO: support more build environments
+    if g:target_cmake_env
+        let l:target = <SID>FindCMakeTarget()
+        if g:target_check_executable && l:target != "" && !executable(l:target)
+            echoerr "vim-target: Found target does not exist"
+            return ""
+        endif
+    else
+        echoerr "vim-target: Build environment not supported"
+        return ""
+    endif
+
+    return l:target
+
+endfunction
+
+" local functions
+
 " TODO: Is there a Vim function for this?
 function! s:ExtractInner(str, left_delim, right_delim)
     let astr = " " . a:str . " "
@@ -16,10 +40,11 @@ function! s:ExtractInner(str, left_delim, right_delim)
     return inner
 endfunction
 
-" A cmake parser with the single purpose of finding the target name
-" for the % file. The function only returns a single target name and
-" do not handle target names built with multiple concatenated cmake variables.
-function! FindCMakeTarget()
+" A cmake parser with the single purpose of finding the target name for the
+" active buffer.
+" TODO: No support for target names built with multiple concatenated cmake
+" variables.
+function! s:FindCMakeTarget()
     let l:found_var = 0
     let l:var_name = ""
     let l:app_name = ""
