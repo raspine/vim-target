@@ -7,7 +7,8 @@ if exists("g:loaded_target") || &cp || v:version < 700
 endif
 let g:loaded_target = 1
 
-" build environments to look out for
+" global vars
+let g:target_check_executable = 1
 let g:target_cmake_env = 1
 
 " public interface
@@ -15,7 +16,7 @@ function! FindExeTarget()
     " TODO: support more build environments
     if g:target_cmake_env
         let l:target = <SID>FindCMakeTarget()
-        if l:target != "" && !executable(l:target)
+        if g:target_check_executable && l:target != "" && !executable(l:target)
             echoerr "vim-target: Found target does not exist"
             return ""
         endif
