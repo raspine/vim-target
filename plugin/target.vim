@@ -16,11 +16,12 @@ function! FindExeTarget()
     if g:target_cmake_env
         let l:target = <SID>FindCMakeTarget()
         if l:target != "" && !executable(l:target)
-            echoerr "Failed to parse cmake environment for target"
+            echoerr "vim-target: Found target does not exist"
             return ""
         endif
     else
-        echoerr "Target's build environment not supported"
+        echoerr "vim-target: Build environment not supported"
+        return ""
     endif
 
     return l:target
