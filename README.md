@@ -7,7 +7,7 @@ executable target for the current buffer. It currently supports CMake build
 environments.
 
 As the current buffer may be linked by several executable targets, it's not
-"water proof" and will work best if your the current buffer/file has
+"water proof" and will work best if the current buffer/file has
 a CMakeList.txt defined in the same directory.
 
 I mainly use it in my .vimrc to launch stuff together with [vim-breakgutter](http://github.com/raspine/vim-breakgutter) and
