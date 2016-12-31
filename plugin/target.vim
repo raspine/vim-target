@@ -21,10 +21,12 @@ function! FindExeTarget()
             echoerr "No target found"
         elseif len(l:targets) > 1
             echoerr "Too many targets found"
-            echom l:targets
+            for target in l:targets
+                echom target
+            endfor
         endif
 
-        if g:target_check_executable && l:targets[0] != "" && !executable(l:target)
+        if g:target_check_executable && l:targets[0] != "" && !executable(l:targets[0])
             echoerr "vim-target: Found target does not exist"
             return ""
         endif
