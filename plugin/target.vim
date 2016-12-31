@@ -94,7 +94,7 @@ function! s:SubstituteWithSet(build_dir, app_name, var_name)
     endif
 endfunction
 
-function! s:ParseCMakeList(cmake_list)
+function! s:ParseCMakeList(build_dir, cmake_list)
     let l:var_name = ""
     let l:app_name = ""
     let l:ret_targets = []
@@ -112,9 +112,9 @@ function! s:ParseCMakeList(cmake_list)
                             if var_name =~ "${"
                                 let app_name = var_name
                                 let var_name = <SID>ExtractInner(var_name, "{", "}")
-                                call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
+                                call add(ret_targets, <SID>SubstituteWithSet(a:build_dir, app_name, var_name))
                             else
-                                call add(ret_targets, build_dir . "/" . var_name)
+                                call add(ret_targets, a:build_dir . "/" . var_name)
                             endif
                             break
                         endif
@@ -122,15 +122,14 @@ function! s:ParseCMakeList(cmake_list)
                 elseif var_name =~ "${"
                     let app_name = var_name
                     let var_name = <SID>ExtractInner(var_name, "{", "}")
-                    call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
+                    call add(ret_targets, <SID>SubstituteWithSet(a:build_dir, app_name, var_name))
                 else
-                    call add(ret_targets, build_dir . "/" . var_name)
+                    call add(ret_targets, a:build_dir . "/" . var_name)
                 endif
             endif
         endfor
-
-        return ret_targets
     endif
+    return ret_targets
 endfunction
 
 " A cmake parser with the single purpose of finding the target name for the
@@ -147,18 +146,19 @@ function! s:FindCMakeTarget()
 
     " look for CMakeLists.txt in current dir
     let l:cmake_list = expand("%:h") . '/CMakeLists.txt'
-    let l:ret_targets = <SID>ParseCMakeList(cmake_list)
+    let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
 
     if len(ret_targets) > 0
-        return ret_targets
+        return l:ret_targets
     endif
 
     " TODO: support deeper hierachies than one level?
     "
     " if here there's no local CMakeLists.txt let's look in the root
     " CMakeLists.txt, lurking above our build dir
-    let cmake_list = build_dir . '/../CMakeLists.txt'
-    return  <SID>ParseCMakeList(cmake_list)
+    let l:cmake_list = build_dir . '/../CMakeLists.txt'
+    let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
+    return  ret_targets
 endfunction
 
 " vim:set ft=vim sw=4 sts=2 et:
