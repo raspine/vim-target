@@ -48,7 +48,7 @@ function! s:SubstituteWithSet(cmake_list, var_name)
     if filereadable(a:cmake_list)
         let cm_list = readfile(a:cmake_list)
         for line in cm_list
-            if line =~ "set\\_s*(\\_s*" . var_name
+            if line =~ "set\\_s*(\\_s*" . a:var_name
                 let main_app_name = <SID>ExtractInner(line, a:var_name, ")")
                 let main_app_found = 1
             endif
