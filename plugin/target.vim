@@ -15,8 +15,14 @@ let g:target_cmake_env = 1
 function! FindExeTarget()
     " TODO: support more build environments
     if g:target_cmake_env
-        let l:target = <SID>FindCMakeTarget()
-        if g:target_check_executable && l:target != "" && !executable(l:target)
+        let l:targets = <SID>FindCMakeTarget()
+
+        if len(l:targets) == 0
+            echoerr "No target found"
+        elseif len(l:targets) > 1
+            echoerr "Too many targets found"
+
+        if g:target_check_executable && l:targets[0] != "" && !executable(l:target)
             echoerr "vim-target: Found target does not exist"
             return ""
         endif
@@ -74,11 +80,12 @@ endfunction
 " TODO: No support for target names built with multiple concatenated cmake
 " variables.
 function! s:FindCMakeTarget()
-    let l:found_var = 0
     let l:var_name = ""
     let l:app_name = ""
     let l:cmake_build_dir = get(g:, 'cmake_build_dir', 'build')
     let l:build_dir = finddir(l:cmake_build_dir, '.;')
+    let l:ret_targets = []
+
     if build_dir == ""
         return ""
     endif
@@ -98,9 +105,9 @@ function! s:FindCMakeTarget()
                             if var_name =~ "${"
                                 let app_name = var_name
                                 let var_name = <SID>ExtractInner(var_name, "{", "}")
-                                let found_var = 1
+                                call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                             else
-                                return build_dir . "/" . var_name
+                                call add(ret_targets, build_dir . "/" . var_name))
                             endif
                             break
                         endif
@@ -108,19 +115,14 @@ function! s:FindCMakeTarget()
                 elseif var_name =~ "${"
                     let app_name = var_name
                     let var_name = <SID>ExtractInner(var_name, "{", "}")
-                    let found_var = 1
+                    call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                 else
-                    return build_dir . "/" . var_name
+                    call add(ret_targets, build_dir . "/" . var_name))
                 endif
             endif
         endfor
-        if found_var == 0
-            return ""
-        endif
 
-        " a variable is used for the target name let's look for a set function
-        " containing the var_name in the root CMakeLists.txt
-        return <SID>SubstituteWithSet(build_dir, app_name, var_name)
+        return ret_targets
     endif
 
     " if here there's no local CMakeLists.txt let's look in the root
@@ -138,9 +140,9 @@ function! s:FindCMakeTarget()
                             if var_name =~ "${"
                                 let app_name = var_name
                                 let var_name = <SID>ExtractInner(var_name, "{", "}")
-                                let found_var = 1
+                                call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                             else
-                                return build_dir . "/" . var_name
+                                call add(ret_targets, build_dir . "/" . var_name))
                             endif
                             break
                         endif
@@ -148,19 +150,14 @@ function! s:FindCMakeTarget()
                 elseif var_name =~ "${"
                     let app_name = var_name
                     let var_name = <SID>ExtractInner(var_name, "{", "}")
-                    let found_var = 1
+                    call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                 else
-                    return build_dir . "/" . var_name
+                    call add(ret_targets, build_dir . "/" . var_name))
                 endif
             endif
         endfor
-        if found_var == 0
-            return ""
-        endif
 
-        " a variable is used for the target name let's look for a set function
-        " containing the var_name in the root CMakeLists.txt
-        return <SID>SubstituteWithSet(build_dir, app_name, var_name)
+        return ret_targets
     endif
 endfunction
 
