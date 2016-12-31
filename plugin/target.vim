@@ -40,6 +40,35 @@ function! s:ExtractInner(str, left_delim, right_delim)
     return inner
 endfunction
 
+function! s:SubstituteWithSet(cmake_list, var_name)
+    " a variable is used for the target name let's look for a set function
+    " containing the var_name in cmake_list
+    let main_app_name = ""
+    let main_app_found = 0
+    if filereadable(a:cmake_list)
+        let cm_list = readfile(a:cmake_list)
+        for line in cm_list
+            if line =~ "set\\_s*(\\_s*" . var_name
+                let main_app_name = <SID>ExtractInner(line, a:var_name, ")")
+                let main_app_found = 1
+            endif
+        endfor
+
+        if main_app_found == 0
+            return ""
+        endif
+
+        " If here, we have a e.g. main_app_name="my_app", e.g. var_name="APP_NAME"
+        " and e.g. app_name="${APP_NAME}_test".
+        " So we make a substitution of what we got, e.g. to my_app_test.
+        " echo main_app_name . " " . var_name . " " . app_name
+        let app_name = substitute(app_name, "${\\_s*" . a:var_name . "\\_s*}", main_app_name, "")
+        return build_dir . "/" . app_name
+    else
+        return ""
+    endif
+endfunction
+
 " A cmake parser with the single purpose of finding the target name for the
 " active buffer.
 " TODO: No support for target names built with multiple concatenated cmake
@@ -59,7 +88,7 @@ function! s:FindCMakeTarget()
     if filereadable(curr_cmake)
         let cm_list = readfile(curr_cmake)
         for line in cm_list
-            " look for the project name
+            " look for the target name
             if line =~ "add_executable\\_s*("
                 let var_name = <SID>ExtractInner(line, "(", " ")
                 if var_name =~ "${\\_s*project_name\\_s*}"
@@ -88,54 +117,50 @@ function! s:FindCMakeTarget()
         if found_var == 0
             return ""
         endif
+
+        " a variable is used for the target name let's look for a set function
+        " containing the var_name in the root CMakeLists.txt
+        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', var_name)
     endif
 
-    " couldn't conclude the app name in a local CMakeLists.txt
-    " let's look in the root CMakeLists.txt, lurking above our build dir
-    let main_app_name = ""
-    let main_app_found = 0
+    " if here there's no local CMakeLists.txt let's look in the root
+    " CMakeLists.txt, lurking above our build dir
     if filereadable(build_dir . '/../CMakeLists.txt')
         let cm_list = readfile(build_dir . '/../CMakeLists.txt')
         for line in cm_list
-            if found_var == 0
-                " look for the project name in case there was no local CMakeLists.txt
-                if line =~ "project\\_s*("
-                    let main_app_name = <SID>ExtractInner(line, "(", ")")
-                    " check if a cmake variable is used, if so make new loop and
-                    " find the variable
-                    if main_app_name =~ "${"
-                        let main_app_name = <SID>ExtractInner(main_app_name, "{", "}")
-                        for app_line in cm_list
-                            if app_line =~ main_app_name
-                                let main_app_name = <SID>ExtractInner(app_line, main_app_name, ")")
-                                return build_dir . "/" . main_app_name
+            " look for the target name
+            if line =~ "add_executable\\_s*("
+                let var_name = <SID>ExtractInner(line, "(", " ")
+                if var_name =~ "${\\_s*project_name\\_s*}"
+                    for proj_line in cm_list
+                        if proj_line =~ "project\\_s*("
+                            let var_name = <SID>ExtractInner(proj_line, "(", ")")
+                            if var_name =~ "${"
+                                let app_name = var_name
+                                let var_name = <SID>ExtractInner(var_name, "{", "}")
+                                let found_var = 1
+                            else
+                                return build_dir . "/" . var_name
                             endif
-                        endfor
-                    else
-                        return build_dir . "/" . main_app_name
-                    endif
-                endif
-            else
-                " in case we do have a var_name, we look for a set function
-                if line =~ "set\\_s*(\\_s*" . var_name
-                    let main_app_name = <SID>ExtractInner(line, var_name, ")")
-                    let main_app_found = 1
+                            break
+                        endif
+                    endfor
+                elseif var_name =~ "${"
+                    let app_name = var_name
+                    let var_name = <SID>ExtractInner(var_name, "{", "}")
+                    let found_var = 1
+                else
+                    return build_dir . "/" . var_name
                 endif
             endif
         endfor
-
-        if main_app_found == 0
+        if found_var == 0
             return ""
         endif
 
-        " If here, we have a e.g. main_app_name="my_app", e.g. var_name="APP_NAME"
-        " and e.g. app_name="${APP_NAME}_test".
-        " So we make a substitution of what we got, e.g. to my_app_test.
-        " echo main_app_name . " " . var_name . " " . app_name
-        let app_name = substitute(app_name, "${\\_s*" . var_name . "\\_s*}", main_app_name, "")
-        return build_dir . "/" . app_name
-    else
-        return ""
+        " a variable is used for the target name let's look for a set function
+        " containing the var_name in the root CMakeLists.txt
+        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', var_name)
     endif
 endfunction
 
