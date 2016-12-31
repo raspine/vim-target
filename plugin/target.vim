@@ -1,19 +1,24 @@
 " target.vim - Returns the executable target name
 " Author:       Jörgen Scott (jorgen.scott@gmail.com)
-" Version:      0.1
+" Version:      0.2
 
+" TODO: no idea what version is actually required for this plugin
 if exists("g:loaded_target") || &cp || v:version < 700
     finish
 endif
 let g:loaded_target = 1
 
 " global vars
+" check that the executable is actually built (we can parse the executable
+" successfully anyway)
 let g:target_check_executable = 1
+" add build environments here so we can ignore build environments not used (for
+" speed)
 let g:target_cmake_env = 1
 
 " public interface
 function! FindExeTarget()
-    " TODO: support more build environments
+    " TODO: support more build environments than cmake?
     if g:target_cmake_env
         let l:targets = <SID>FindCMakeTarget()
         let l:sel = 0
@@ -49,9 +54,7 @@ function! FindExeTarget()
         echoerr "vim-target: Build environment not supported"
         return ""
     endif
-
     return l:targets[sel]
-
 endfunction
 
 " local functions
@@ -94,6 +97,13 @@ function! s:SubstituteWithSet(build_dir, app_name, var_name)
     endif
 endfunction
 
+" Parses a CMakeLists.txt. Supports common variable substitutions such as using
+" project_name and/or the set() method. The method is not 'water proof' and
+" probably never will be a cmake provides very flexible ways to build up
+" variables names. Hopefully it is good enough to support most common use
+" cases...
+" TODO: No support for target names built with _multiple_ concatenated cmake
+" variables.
 function! s:ParseCMakeList(build_dir, cmake_list)
     let l:var_name = ""
     let l:app_name = ""
@@ -132,10 +142,8 @@ function! s:ParseCMakeList(build_dir, cmake_list)
     return ret_targets
 endfunction
 
-" A cmake parser with the single purpose of finding the target name for the
+" A cmake parser with the sole purpose of finding the target name for the
 " active buffer.
-" TODO: No support for target names built with multiple concatenated cmake
-" variables.
 function! s:FindCMakeTarget()
     let l:cmake_build_dir = get(g:, 'cmake_build_dir', 'build')
     let l:build_dir = finddir(l:cmake_build_dir, '.;')
