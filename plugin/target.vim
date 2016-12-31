@@ -17,16 +17,31 @@ function! FindExeTarget()
     if g:target_cmake_env
         let l:targets = <SID>FindCMakeTarget()
 
+        let l:sel = 0
         if len(l:targets) == 0
             echoerr "No target found"
+            return ""
         elseif len(l:targets) > 1
-            echoerr "Too many targets found"
-            for target in l:targets
-                echom target
-            endfor
+            echo "Multiple targets found:"
+            while 1
+                let index = 1
+                for target in l:targets
+                    echo index . ") " . target
+                    let index = index + 1
+                endfor
+                call inputsave()
+                let sel = input('Select index: ')
+                call inputrestore()
+                if sel == type(0) || sel > len(l:targets)
+                    echoerr "Please select a number within range"
+                else
+                    break
+                endif
+            endwhile
+            let sel = sel - 1
         endif
 
-        if g:target_check_executable && l:targets[0] != "" && !executable(l:targets[0])
+        if g:target_check_executable && l:targets[sel] != "" && !executable(l:targets[sel])
             echoerr "vim-target: Found target does not exist"
             return ""
         endif
@@ -35,7 +50,7 @@ function! FindExeTarget()
         return ""
     endif
 
-    return l:targets[0]
+    return l:targets[sel]
 
 endfunction
 
@@ -50,9 +65,9 @@ function! s:ExtractInner(str, left_delim, right_delim)
     return inner
 endfunction
 
+" looks for a set function in the root CMakeLists.txt to make a substitution
+" of app_name
 function! s:SubstituteWithSet(build_dir, app_name, var_name)
-    " a variable is used for the target name let's look for a set function
-    " containing the var_name in cmake_list
     let main_app_name = ""
     let main_app_found = 0
     if filereadable(a:build_dir . '/../CMakeLists.txt')
