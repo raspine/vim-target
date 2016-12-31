@@ -21,6 +21,8 @@ function! FindExeTarget()
             echoerr "No target found"
         elseif len(l:targets) > 1
             echoerr "Too many targets found"
+            echom l:targets
+        endif
 
         if g:target_check_executable && l:targets[0] != "" && !executable(l:target)
             echoerr "vim-target: Found target does not exist"
@@ -31,7 +33,7 @@ function! FindExeTarget()
         return ""
     endif
 
-    return l:target
+    return l:targets[0]
 
 endfunction
 
@@ -107,7 +109,7 @@ function! s:FindCMakeTarget()
                                 let var_name = <SID>ExtractInner(var_name, "{", "}")
                                 call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                             else
-                                call add(ret_targets, build_dir . "/" . var_name))
+                                call add(ret_targets, build_dir . "/" . var_name)
                             endif
                             break
                         endif
@@ -117,7 +119,7 @@ function! s:FindCMakeTarget()
                     let var_name = <SID>ExtractInner(var_name, "{", "}")
                     call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                 else
-                    call add(ret_targets, build_dir . "/" . var_name))
+                    call add(ret_targets, build_dir . "/" . var_name)
                 endif
             endif
         endfor
@@ -142,7 +144,7 @@ function! s:FindCMakeTarget()
                                 let var_name = <SID>ExtractInner(var_name, "{", "}")
                                 call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                             else
-                                call add(ret_targets, build_dir . "/" . var_name))
+                                call add(ret_targets, build_dir . "/" . var_name)
                             endif
                             break
                         endif
@@ -152,7 +154,7 @@ function! s:FindCMakeTarget()
                     let var_name = <SID>ExtractInner(var_name, "{", "}")
                     call add(ret_targets, <SID>SubstituteWithSet(build_dir, app_name, var_name))
                 else
-                    call add(ret_targets, build_dir . "/" . var_name))
+                    call add(ret_targets, build_dir . "/" . var_name)
                 endif
             endif
         endfor
