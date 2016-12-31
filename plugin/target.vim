@@ -40,13 +40,13 @@ function! s:ExtractInner(str, left_delim, right_delim)
     return inner
 endfunction
 
-function! s:SubstituteWithSet(cmake_list, app_name, var_name)
+function! s:SubstituteWithSet(build_dir, app_name, var_name)
     " a variable is used for the target name let's look for a set function
     " containing the var_name in cmake_list
     let main_app_name = ""
     let main_app_found = 0
-    if filereadable(a:cmake_list)
-        let cm_list = readfile(a:cmake_list)
+    if filereadable(a:build_dir . '/../CMakeLists.txt')
+        let cm_list = readfile(a:build_dir . '/../CMakeLists.txt')
         for line in cm_list
             if line =~ "set\\_s*(\\_s*" . a:var_name
                 let main_app_name = <SID>ExtractInner(line, a:var_name, ")")
@@ -63,7 +63,7 @@ function! s:SubstituteWithSet(cmake_list, app_name, var_name)
         " So we make a substitution of what we got, e.g. to my_app_test.
         " echo main_app_name . " " . var_name . " " . app_name
         let final_app_name = substitute(a:app_name, "${\\_s*" . a:var_name . "\\_s*}", main_app_name, "")
-        return build_dir . "/" . final_app_name
+        return a:build_dir . "/" . final_app_name
     else
         return ""
     endif
@@ -120,7 +120,7 @@ function! s:FindCMakeTarget()
 
         " a variable is used for the target name let's look for a set function
         " containing the var_name in the root CMakeLists.txt
-        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', app_name, var_name)
+        return <SID>SubstituteWithSet(build_dir, app_name, var_name)
     endif
 
     " if here there's no local CMakeLists.txt let's look in the root
@@ -160,7 +160,7 @@ function! s:FindCMakeTarget()
 
         " a variable is used for the target name let's look for a set function
         " containing the var_name in the root CMakeLists.txt
-        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', app_name, var_name)
+        return <SID>SubstituteWithSet(build_dir, app_name, var_name)
     endif
 endfunction
 
