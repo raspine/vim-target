@@ -40,7 +40,7 @@ function! s:ExtractInner(str, left_delim, right_delim)
     return inner
 endfunction
 
-function! s:SubstituteWithSet(cmake_list, var_name)
+function! s:SubstituteWithSet(cmake_list, app_name, var_name)
     " a variable is used for the target name let's look for a set function
     " containing the var_name in cmake_list
     let main_app_name = ""
@@ -62,8 +62,8 @@ function! s:SubstituteWithSet(cmake_list, var_name)
         " and e.g. app_name="${APP_NAME}_test".
         " So we make a substitution of what we got, e.g. to my_app_test.
         " echo main_app_name . " " . var_name . " " . app_name
-        let app_name = substitute(app_name, "${\\_s*" . a:var_name . "\\_s*}", main_app_name, "")
-        return build_dir . "/" . app_name
+        let final_app_name = substitute(a:app_name, "${\\_s*" . a:var_name . "\\_s*}", main_app_name, "")
+        return build_dir . "/" . final_app_name
     else
         return ""
     endif
@@ -120,7 +120,7 @@ function! s:FindCMakeTarget()
 
         " a variable is used for the target name let's look for a set function
         " containing the var_name in the root CMakeLists.txt
-        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', var_name)
+        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', app_name, var_name)
     endif
 
     " if here there's no local CMakeLists.txt let's look in the root
@@ -160,7 +160,7 @@ function! s:FindCMakeTarget()
 
         " a variable is used for the target name let's look for a set function
         " containing the var_name in the root CMakeLists.txt
-        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', var_name)
+        return <SID>SubstituteWithSet(build_dir . '/../CMakeLists.txt', app_name, var_name)
     endif
 endfunction
 
