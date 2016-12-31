@@ -10,7 +10,13 @@ As the current buffer may be linked by several executable targets, it's not
 "water proof" and will work best if the current buffer/file has
 a CMakeList.txt defined in the same directory.
 
-I mainly use it in my .vimrc to launch stuff together with [vim-breakgutter](http://github.com/raspine/vim-breakgutter) and
+vim-target will attempt to provide a single executable target without user
+intervention, however if are several calls to "add_executable" in any
+CMakeLists.txt, it will prompt the caller for the intended target. Avoid this
+by using an hierarchy of CMakeLists.txt:s.
+
+I mainly use it in my .vimrc to launch stuff together with
+[vim-breakgutter](http://github.com/raspine/vim-breakgutter) and
 [vim-testdog](http://github.com/raspine/vim-testdog).
 
 ## Usage
