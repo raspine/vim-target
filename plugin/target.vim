@@ -1,22 +1,52 @@
 " target.vim - Returns the executable target name
 " Author:       Jörgen Scott (jorgen.scott@gmail.com)
-" Version:      0.1
+" Version:      0.2
 
+" TODO: no idea what version is actually required for this plugin
 if exists("g:loaded_target") || &cp || v:version < 700
     finish
 endif
 let g:loaded_target = 1
 
 " global vars
+" check that the executable is actually built (we can parse the executable
+" successfully anyway)
 let g:target_check_executable = 1
+" add build environments here so we can ignore build environments not used (for
+" speed)
 let g:target_cmake_env = 1
 
 " public interface
 function! FindExeTarget()
-    " TODO: support more build environments
+    " TODO: support more build environments than cmake?
     if g:target_cmake_env
-        let l:target = <SID>FindCMakeTarget()
-        if g:target_check_executable && l:target != "" && !executable(l:target)
+        let l:targets = <SID>FindCMakeTarget()
+        let l:sel = 0
+
+        if len(l:targets) == 0
+            echoerr "No target found"
+            return ""
+        elseif len(l:targets) > 1
+            echo "Multiple targets found:"
+            while 1
+                let index = 1
+                for target in l:targets
+                    echo index . ") " . target
+                    let index = index + 1
+                endfor
+                call inputsave()
+                let sel = input('Select index: ')
+                call inputrestore()
+                if sel == type(0) || sel > len(l:targets)
+                    echoerr "Please select a number within range"
+                else
+                    break
+                endif
+            endwhile
+            let sel = sel - 1
+        endif
+
+        if g:target_check_executable && l:targets[sel] != "" && !executable(l:targets[sel])
             echoerr "vim-target: Found target does not exist"
             return ""
         endif
@@ -24,9 +54,7 @@ function! FindExeTarget()
         echoerr "vim-target: Build environment not supported"
         return ""
     endif
-
-    return l:target
-
+    return l:targets[sel]
 endfunction
 
 " local functions
@@ -40,87 +68,17 @@ function! s:ExtractInner(str, left_delim, right_delim)
     return inner
 endfunction
 
-" A cmake parser with the single purpose of finding the target name for the
-" active buffer.
-" TODO: No support for target names built with multiple concatenated cmake
-" variables.
-function! s:FindCMakeTarget()
-    let l:found_var = 0
-    let l:var_name = ""
-    let l:app_name = ""
-    let l:cmake_build_dir = get(g:, 'cmake_build_dir', 'build')
-    let l:build_dir = finddir(l:cmake_build_dir, '.;')
-    if build_dir == ""
-        return ""
-    endif
-
-    " look for CMakeLists.txt in current dir
-    let l:curr_cmake = expand("%:h") . '/CMakeLists.txt'
-    if filereadable(curr_cmake)
-        let cm_list = readfile(curr_cmake)
-        for line in cm_list
-            " look for the project name
-            if line =~ "add_executable\\_s*("
-                let var_name = <SID>ExtractInner(line, "(", " ")
-                if var_name =~ "${\\_s*project_name\\_s*}"
-                    for proj_line in cm_list
-                        if proj_line =~ "project\\_s*("
-                            let var_name = <SID>ExtractInner(proj_line, "(", ")")
-                            if var_name =~ "${"
-                                let app_name = var_name
-                                let var_name = <SID>ExtractInner(var_name, "{", "}")
-                                let found_var = 1
-                            else
-                                return build_dir . "/" . var_name
-                            endif
-                            break
-                        endif
-                    endfor
-                elseif var_name =~ "${"
-                    let app_name = var_name
-                    let var_name = <SID>ExtractInner(var_name, "{", "}")
-                    let found_var = 1
-                else
-                    return build_dir . "/" . var_name
-                endif
-            endif
-        endfor
-        if found_var == 0
-            return ""
-        endif
-    endif
-
-    " couldn't conclude the app name in a local CMakeLists.txt
-    " let's look in the root CMakeLists.txt, lurking above our build dir
+" looks for a set function in the root CMakeLists.txt to make a substitution
+" of app_name
+function! s:SubstituteWithSet(build_dir, app_name, var_name)
     let main_app_name = ""
     let main_app_found = 0
-    if filereadable(build_dir . '/../CMakeLists.txt')
-        let cm_list = readfile(build_dir . '/../CMakeLists.txt')
+    if filereadable(a:build_dir . '/../CMakeLists.txt')
+        let cm_list = readfile(a:build_dir . '/../CMakeLists.txt')
         for line in cm_list
-            if found_var == 0
-                " look for the project name in case there was no local CMakeLists.txt
-                if line =~ "project\\_s*("
-                    let main_app_name = <SID>ExtractInner(line, "(", ")")
-                    " check if a cmake variable is used, if so make new loop and
-                    " find the variable
-                    if main_app_name =~ "${"
-                        let main_app_name = <SID>ExtractInner(main_app_name, "{", "}")
-                        for app_line in cm_list
-                            if app_line =~ main_app_name
-                                let main_app_name = <SID>ExtractInner(app_line, main_app_name, ")")
-                                return build_dir . "/" . main_app_name
-                            endif
-                        endfor
-                    else
-                        return build_dir . "/" . main_app_name
-                    endif
-                endif
-            else
-                " in case we do have a var_name, we look for a set function
-                if line =~ "set\\_s*(\\_s*" . var_name
-                    let main_app_name = <SID>ExtractInner(line, var_name, ")")
-                    let main_app_found = 1
-                endif
+            if line =~ "set\\_s*(\\_s*" . a:var_name
+                let main_app_name = <SID>ExtractInner(line, a:var_name, ")")
+                let main_app_found = 1
             endif
         endfor
 
@@ -132,11 +90,83 @@ function! s:FindCMakeTarget()
         " and e.g. app_name="${APP_NAME}_test".
         " So we make a substitution of what we got, e.g. to my_app_test.
         " echo main_app_name . " " . var_name . " " . app_name
-        let app_name = substitute(app_name, "${\\_s*" . var_name . "\\_s*}", main_app_name, "")
-        return build_dir . "/" . app_name
+        let final_app_name = substitute(a:app_name, "${\\_s*" . a:var_name . "\\_s*}", main_app_name, "")
+        return a:build_dir . "/" . final_app_name
     else
         return ""
     endif
+endfunction
+
+" Parses a CMakeLists.txt. Supports common variable substitutions such as using
+" project_name and/or the set() method. The method is not 'water proof' and
+" probably never will be a cmake provides very flexible ways to build up
+" variables names. Hopefully it is good enough to support most common use
+" cases...
+" TODO: No support for target names built with _multiple_ concatenated cmake
+" variables.
+function! s:ParseCMakeList(build_dir, cmake_list)
+    let l:var_name = ""
+    let l:app_name = ""
+    let l:ret_targets = []
+
+    if filereadable(a:cmake_list)
+        let cm_list = readfile(a:cmake_list)
+        for line in cm_list
+            " look for the target name
+            if line =~ "add_executable\\_s*("
+                let var_name = <SID>ExtractInner(line, "(", " ")
+                if var_name =~ "${\\_s*project_name\\_s*}"
+                    for proj_line in cm_list
+                        if proj_line =~ "project\\_s*("
+                            let var_name = <SID>ExtractInner(proj_line, "(", ")")
+                            if var_name =~ "${"
+                                let app_name = var_name
+                                let var_name = <SID>ExtractInner(var_name, "{", "}")
+                                call add(ret_targets, <SID>SubstituteWithSet(a:build_dir, app_name, var_name))
+                            else
+                                call add(ret_targets, a:build_dir . "/" . var_name)
+                            endif
+                            break
+                        endif
+                    endfor
+                elseif var_name =~ "${"
+                    let app_name = var_name
+                    let var_name = <SID>ExtractInner(var_name, "{", "}")
+                    call add(ret_targets, <SID>SubstituteWithSet(a:build_dir, app_name, var_name))
+                else
+                    call add(ret_targets, a:build_dir . "/" . var_name)
+                endif
+            endif
+        endfor
+    endif
+    return ret_targets
+endfunction
+
+" A cmake parser with the sole purpose of finding the target name for the
+" active buffer.
+function! s:FindCMakeTarget()
+    let l:cmake_build_dir = get(g:, 'cmake_build_dir', 'build')
+    let l:build_dir = finddir(l:cmake_build_dir, '.;')
+
+    if build_dir == ""
+        return ""
+    endif
+
+    " look for CMakeLists.txt in current dir
+    let l:cmake_list = expand("%:h") . '/CMakeLists.txt'
+    let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
+
+    if len(ret_targets) > 0
+        return l:ret_targets
+    endif
+
+    " TODO: support deeper hierachies than one level?
+    "
+    " if here there's no local CMakeLists.txt let's look in the root
+    " CMakeLists.txt, lurking above our build dir
+    let l:cmake_list = build_dir . '/../CMakeLists.txt'
+    let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
+    return  ret_targets
 endfunction
 
 " vim:set ft=vim sw=4 sts=2 et:
