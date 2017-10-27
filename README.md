@@ -35,7 +35,7 @@ Examples:
 nnoremap <leader>r :exec "!" . FindExeTarget()<cr>
 
 " spawn a gdb session in a separate terminal using Tim Pope's vim-dispatch plugin
-nnoremap <leader>g :exec "Spawn urxvt -e gdb" . FindExeTarget()<cr>
+nnoremap <leader>g :exec "Spawn urxvt -e gdb " . FindExeTarget()<cr>
 
 ```
 
