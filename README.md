@@ -11,7 +11,7 @@ As the current buffer may be linked by several executable targets, it's not
 a CMakeList.txt defined in the same directory.
 
 vim-target will attempt to provide a single executable target without user
-intervention, however if are several calls to "add_executable" in any
+intervention, however if there are several calls to "add_executable" in any
 CMakeLists.txt, it will prompt the caller for the intended target. Avoid this
 by using an hierarchy of CMakeLists.txt:s.
 
