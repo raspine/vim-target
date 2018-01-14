@@ -35,7 +35,7 @@ Examples:
 nnoremap <leader>r :exec "!" . FindExeTarget()<cr>
 
 " Spawn a gdb session in a separate terminal. The ending  '&' unlocks
-"Vim while debugging.
+" Vim while debugging.
 nnoremap <leader>g :exec "!urxvt -e gdb " . FindExeTarget() . '&'<cr>
 
 ```
