@@ -34,8 +34,9 @@ Examples:
 " run the target from Vim
 nnoremap <leader>r :exec "!" . FindExeTarget()<cr>
 
-" spawn a gdb session in a separate terminal using Tim Pope's vim-dispatch plugin
-nnoremap <leader>g :exec "Spawn urxvt -e gdb " . FindExeTarget()<cr>
+" Spawn a gdb session in a separate terminal. The ending  '&' unlocks
+"Vim while debugging.
+nnoremap <leader>g :exec "!urxvt -e gdb " . FindExeTarget() . '&'<cr>
 
 ```
 
