@@ -157,7 +157,7 @@ function! s:FindCMakeTarget()
     let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
 
     if len(ret_targets) > 0
-        return l:ret_targets
+        return l:ret_targets->uniq()
     endif
 
     " TODO: support deeper hierachies than one level?
@@ -166,7 +166,7 @@ function! s:FindCMakeTarget()
     " CMakeLists.txt, lurking above our build dir
     let l:cmake_list = build_dir . '/../CMakeLists.txt'
     let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
-    return  ret_targets
+    return  l:ret_targets->uniq()
 endfunction
 
 " vim:set ft=vim sw=4 sts=2 et:
