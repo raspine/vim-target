@@ -91,7 +91,7 @@ function! s:SubstituteWithSet(build_dir, app_name, var_name)
         " So we make a substitution of what we got, e.g. to my_app_test.
         " echo main_app_name . " " . var_name . " " . app_name
         let final_app_name = substitute(a:app_name, "${\\_s*" . a:var_name . "\\_s*}", main_app_name, "")
-        return a:build_dir . "/" . final_app_name
+        return final_app_name
     else
         return ""
     endif
@@ -102,8 +102,6 @@ endfunction
 " probably never will be a cmake provides very flexible ways to build up
 " variables names. Hopefully it is good enough to support most common use
 " cases...
-" TODO: No support for target names built with _multiple_ concatenated cmake
-" variables.
 function! s:ParseCMakeList(build_dir, cmake_list)
     let l:var_name = ""
     let l:app_name = ""
@@ -124,7 +122,7 @@ function! s:ParseCMakeList(build_dir, cmake_list)
                                 let var_name = <SID>ExtractInner(var_name, "{", "}")
                                 call add(ret_targets, <SID>SubstituteWithSet(a:build_dir, app_name, var_name))
                             else
-                                call add(ret_targets, a:build_dir . "/" . var_name)
+                                call add(ret_targets, var_name)
                             endif
                             break
                         endif
@@ -134,7 +132,7 @@ function! s:ParseCMakeList(build_dir, cmake_list)
                     let var_name = <SID>ExtractInner(var_name, "{", "}")
                     call add(ret_targets, <SID>SubstituteWithSet(a:build_dir, app_name, var_name))
                 else
-                    call add(ret_targets, a:build_dir . "/" . var_name)
+                    call add(ret_targets, var_name)
                 endif
             endif
         endfor
@@ -154,10 +152,27 @@ function! s:FindCMakeTarget()
 
     " look for CMakeLists.txt in current dir
     let l:cmake_list = expand("%:h") . '/CMakeLists.txt'
-    let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
+    let l:targets = <SID>ParseCMakeList(build_dir, cmake_list)
+    let l:ret_targets = []
 
-    if len(ret_targets) > 0
-        return l:ret_targets->uniq()
+    if len(targets) > 0
+        let uniq_targets = l:targets->uniq()
+        for target in uniq_targets
+            let l:build_parent_dir = fnamemodify(l:build_dir, ':h')
+            if filereadable(build_dir . "/" . target)
+                call add(ret_targets, build_dir . "/" . target)
+            else
+                " build_parent_dir may be several directories up than getcwd()
+                " Append the difference to build_dir as that would typically be
+                " a common place to find targets in the build directory.
+                let l:str_diff = strpart(getcwd(), strlen(l:build_parent_dir))
+                if filereadable(build_dir . str_diff . "/" . target)
+                    call add(ret_targets, build_dir . str_diff . "/" . target)
+                    " TODO: else search the build_dir..
+                endif
+            endif
+        endfor
+        return l:ret_targets
     endif
 
     " TODO: support deeper hierachies than one level?
@@ -165,8 +180,12 @@ function! s:FindCMakeTarget()
     " if here there's no local CMakeLists.txt let's look in the root
     " CMakeLists.txt, lurking above our build dir
     let l:cmake_list = build_dir . '/../CMakeLists.txt'
-    let l:ret_targets = <SID>ParseCMakeList(build_dir, cmake_list)
-    return  l:ret_targets->uniq()
+    let l:targets = <SID>ParseCMakeList(build_dir, cmake_list)
+    let uniq_targets = l:targets->uniq()
+    for target in uniq_targets
+        call add(ret_targets, build_dir . "/" . target)
+    endfor
+    return  l:ret_targets
 endfunction
 
 " vim:set ft=vim sw=4 sts=2 et:
