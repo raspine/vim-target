@@ -1,6 +1,6 @@
 " target.vim - Returns the executable target name
 " Author:       Jörgen Scott (jorgen.scott@gmail.com)
-" Version:      0.2
+" Version:      0.3
 
 " TODO: no idea what version is actually required for this plugin
 if exists("g:loaded_target") || &cp || v:version < 700
