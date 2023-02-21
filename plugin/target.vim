@@ -168,7 +168,9 @@ function! s:FindCMakeTarget()
                 let l:str_diff = strpart(getcwd(), strlen(l:build_parent_dir))
                 if filereadable(build_dir . str_diff . "/" . target)
                     call add(ret_targets, build_dir . str_diff . "/" . target)
-                    " TODO: else search the build_dir..
+                else
+                    " brute force search
+                    call add(ret_targets, findfile(target, build_dir."/**"))
                 endif
             endif
         endfor
