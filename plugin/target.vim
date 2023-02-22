@@ -151,7 +151,7 @@ function! s:FindCMakeTarget()
     endif
 
     " look for CMakeLists.txt in current dir
-    let l:cmake_list = expand("%:h") . '/CMakeLists.txt'
+	let l:cmake_list = findfile("CMakeLists.txt", expand("%:h").".;")
     let l:targets = <SID>ParseCMakeList(build_dir, cmake_list)
     let l:ret_targets = []
 
