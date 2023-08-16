@@ -18,13 +18,11 @@ let g:target_cmake_env = 1
 
 " public interface
 function! FindExeTarget()
-    " TODO: support more build environments than cmake?
     if g:target_cmake_env
         let l:targets = <SID>FindCMakeTarget()
         let l:sel = 0
 
         if len(l:targets) == 0
-            echoerr "No target found"
             return ""
         elseif len(l:targets) > 1
             echo "Multiple targets found:"
