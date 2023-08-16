@@ -57,6 +57,24 @@ function! FindExeTarget()
     return l:targets[sel]
 endfunction
 
+function! FindBuildTarget()
+    let l:cmake_build_dir = get(g:, 'cmake_build_dir', 'build')
+    let l:build_dir = finddir(l:cmake_build_dir, '.;')
+
+    if build_dir == ""
+        return ""
+    endif
+
+    " look for CMakeLists.txt in current dir or search upwards
+    let l:cmake_list = expand("%:h") . '/CMakeLists.txt'
+    if !filereadable(cmake_list)
+        let l:cmake_list = findfile("CMakeLists.txt", expand("%:h").".;")
+    endif
+
+    let l:targets = <SID>ParseCMakeList(build_dir, cmake_list)
+	return l:targets[0]
+endfunction
+
 " local functions
 
 " TODO: Is there a Vim function for this?
