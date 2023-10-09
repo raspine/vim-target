@@ -70,7 +70,31 @@ function! FindBuildTarget()
     endif
 
     let l:targets = <SID>ParseCMakeList(build_dir, cmake_list)
-	return l:targets[0]
+
+	if len(l:targets) == 0
+		return ""
+	elseif len(l:targets) == 1
+		return l:targets[0]
+	elseif len(l:targets) > 1
+		echo "Multiple targets found:"
+		while 1
+			let index = 1
+			for target in l:targets
+				echo index . ") " . target
+				let index = index + 1
+			endfor
+			call inputsave()
+			let sel = input('Select index: ')
+			call inputrestore()
+			if sel == type(0) || sel > len(l:targets)
+				echoerr "Please select a number within range"
+			else
+				break
+			endif
+		endwhile
+		let sel = sel - 1
+		return l:targets[sel]
+	endif
 endfunction
 
 " local functions
