@@ -63,10 +63,10 @@ function! FindBuildTarget()
         return ""
     endif
 
-    " look for CMakeLists.txt in current dir or search upwards
+    " search for CMakeLists.txt in the directory of the current file upwards
     let l:cmake_list = expand("%:h") . '/CMakeLists.txt'
     if !filereadable(cmake_list)
-        let l:cmake_list = findfile("CMakeLists.txt", expand("%:h").".;")
+        let l:cmake_list = findfile("CMakeLists.txt", ".;")
     endif
 
     let l:targets = <SID>ParseCMakeList(build_dir, cmake_list)
@@ -190,10 +190,10 @@ function! s:FindCMakeTarget()
         return ""
     endif
 
-    " look for CMakeLists.txt in current dir or search upwards
+    " search for CMakeLists.txt in the directory of the current file upwards
     let l:cmake_list = expand("%:h") . '/CMakeLists.txt'
     if !filereadable(cmake_list)
-        let l:cmake_list = findfile("CMakeLists.txt", expand("%:h").".;")
+        let l:cmake_list = findfile("CMakeLists.txt", ".;")
     endif
 
     let l:targets = <SID>ParseCMakeList(build_dir, cmake_list)
