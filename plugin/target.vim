@@ -1,6 +1,6 @@
 " target.vim - Returns the executable target name
 " Author:       Jörgen Scott (jorgen.scott@gmail.com)
-" Version:      0.3
+" Version:      0.4
 
 " TODO: no idea what version is actually required for this plugin
 if exists("g:loaded_target") || &cp || v:version < 700
@@ -99,7 +99,6 @@ endfunction
 
 " local functions
 
-" TODO: Is there a Vim function for this?
 function! s:ExtractInner(str, left_delim, right_delim)
     let astr = " " . a:str . " "
     let inner = split(astr, a:left_delim)[1]
@@ -137,6 +136,19 @@ function! s:SubstituteWithSet(build_dir, app_name, var_name)
     endif
 endfunction
 
+function! s:JoinLinesUntilDelim(lines, start_index, delim)
+	let l:ret = a:lines[a:start_index]
+	let l:index = a:start_index + 1
+	while l:index < len(a:lines)
+		let l:ret = l:ret . a:lines[l:index]
+		let l:index = l:index + 1
+		if l:ret =~ a:delim
+			break
+		endif
+	endwhile
+	return l:ret
+endfunction
+
 " Parses a CMakeLists.txt. Supports common variable substitutions such as using
 " project_name and/or the set() method. The method is not 'water proof' and
 " probably never will be a cmake provides very flexible ways to build up
@@ -149,10 +161,13 @@ function! s:ParseCMakeList(build_dir, cmake_list)
 
     if filereadable(a:cmake_list)
         let cm_list = readfile(a:cmake_list)
-        for line in cm_list
+        let l:lineNo = 0
+        while l:lineNo < len(cm_list)
+            let l:line = cm_list[l:lineNo]
             " look for the target name
             if line =~ "add_executable\\_s*("
-                let var_name = <SID>ExtractInner(line, "(", " ")
+                let l:fullLine = <SID>JoinLinesUntilDelim(cm_list, l:lineNo, ")")
+                let var_name = <SID>ExtractInner(l:fullLine, "(", " ")
                 if var_name =~ "${\\_s*project_name\\_s*}"
                     for proj_line in cm_list
                         if proj_line =~ "project\\_s*("
@@ -175,7 +190,8 @@ function! s:ParseCMakeList(build_dir, cmake_list)
                     call add(ret_targets, var_name)
                 endif
             endif
-        endfor
+            let l:lineNo = l:lineNo + 1
+        endwhile
     endif
     return ret_targets
 endfunction
