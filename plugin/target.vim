@@ -146,7 +146,7 @@ function! s:JoinLinesUntilDelim(lines, start_index, delim)
 			break
 		endif
 	endwhile
-	return l:ret
+	return substitute(l:ret, "\t", " ", "")
 endfunction
 
 " Parses a CMakeLists.txt. Supports common variable substitutions such as using
